@@ -14,15 +14,9 @@
 
 ## 安装
 
-**方式一：Git 地址（当前可用）**
+**方式一：npm（推荐）**
 
 在 DeepSeek Harness 的 **插件 → Add plugin** 里输入：
-
-```
-https://github.com/goodCircle/dsh-work-encourager
-```
-
-**方式二：npm（发布后）**
 
 ```
 dsh-work-encourager
@@ -32,6 +26,12 @@ dsh-work-encourager
 
 ```sh
 dsh plugin --profile <profile> add dsh-work-encourager
+```
+
+**方式二：Git 地址**
+
+```
+https://github.com/goodCircle/dsh-work-encourager
 ```
 
 安装后左侧栏会出现一个 ¥ 金币图标，点开就是面板。需要 DSH >= `0.2.2-rc.1`（Web UI 侧栏）。
