@@ -1,0 +1,54 @@
+{
+  "name": "dsh-work-encourager",
+  "version": "1.0.0",
+  "description": "Web UI workday salary ticker for DeepSeek Harness: live pay, a countdown to quitting time, workday progress, and a daily five-item payday shelf.",
+  "type": "module",
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "workday",
+    "salary",
+    "payday",
+    "timer"
+  ],
+  "author": "goodCircle",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/goodCircle/dsh-work-encourager.git"
+  },
+  "homepage": "https://github.com/goodCircle/dsh-work-encourager#readme",
+  "publishConfig": {
+    "access": "public"
+  },
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg"
+  ],
+  "dsh": {
+    "engines": {
+      "dsh": ">=0.2.2-rc.1"
+    },
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-layout",
+        "@deepseek-ai/dsh-client-ui-sidebar"
+      ]
+    }
+  }
+}

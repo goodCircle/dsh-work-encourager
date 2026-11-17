@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Workday encourager">
+  <defs>
+    <linearGradient id="encourager-coin" x1="14" y1="12" x2="50" y2="54" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f7c764"/>
+      <stop offset="1" stop-color="#d9962f"/>
+    </linearGradient>
+    <linearGradient id="encourager-shine" x1="20" y1="16" x2="36" y2="40" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.42"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <circle cx="32" cy="33" r="24" fill="url(#encourager-coin)"/>
+  <circle cx="32" cy="33" r="24" fill="none" stroke="#a86f1d" stroke-opacity="0.45" stroke-width="1.6"/>
+  <circle cx="32" cy="33" r="18.6" fill="none" stroke="#8d5c13" stroke-opacity="0.34" stroke-width="1.5"/>
+  <path d="M18 21.5c3.4-4.4 8.5-6.8 14-6.8 3.2 0 6.3 0.9 9 2.6" fill="none" stroke="url(#encourager-shine)" stroke-width="3.4" stroke-linecap="round"/>
+  <path d="M32 22.2v21.6M24.4 20.9 32 30.1l7.6-9.2M25.2 30.9h13.6M25.2 35.5h13.6" fill="none" stroke="#fffdf6" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round"/>
+  <g stroke="#fffdf6" stroke-width="2.4" stroke-linecap="round" opacity="0.9">
+    <path d="M50.5 43.5v6"/>
+    <path d="M55.5 40.5v9"/>
+  </g>
+</svg>
