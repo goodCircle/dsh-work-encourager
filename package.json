@@ -1,7 +1,7 @@
 {
   "name": "dsh-work-encourager",
   "version": "1.0.0",
-  "description": "Web UI workday salary ticker for DeepSeek Harness: live pay, a countdown to quitting time, workday progress, and a daily five-item payday shelf.",
+  "description": "Left-sidebar workday encourager: today's pay ticks upward live, with a countdown to quitting time, workday progress, and your own daily wage, hours, and any number of breaks.",
   "type": "module",
   "keywords": [
     "dsh",

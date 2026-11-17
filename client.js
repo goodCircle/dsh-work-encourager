@@ -9,13 +9,21 @@ window.__ModuleLoader__.load({
     const PANEL_ID = 'workday';
     const STORAGE_KEY = 'dsh.work-encourager.v1';
 
-    /** Defaults mirror the classic "daily wage / office hours / lunch" card. */
+    /** At most this many break rows, so the settings card stays readable. */
+    const MAX_BREAKS = 8;
+
+    /** Default breaks: noon lunch and a dinner break before a six o'clock finish. */
+    const DEFAULT_BREAKS = [
+      { start: '12:00', minutes: 60 },
+      { start: '17:30', minutes: 30 },
+    ];
+
+    /** Defaults mirror the classic "daily wage / office hours / breaks" card. */
     const DEFAULTS = {
       dailyWage: 140,
       start: '09:00',
       end: '18:00',
-      lunchStart: '12:00',
-      lunchMinutes: 90,
+      breaks: DEFAULT_BREAKS,
     };
 
     /** Rotating encouragement: six lines shared by both locales. */
@@ -25,7 +33,7 @@ window.__ModuleLoader__.load({
       'panel.label': '上班鼓励器',
       'page.title': '上班鼓励器',
       'phase.working': '上班中 · 收获正在增加',
-      'phase.lunch': '午休中 · 收入暂停一下',
+      'phase.lunch': '休息中 · 收入暂停一下',
       'phase.before': '还没上班 · 先给自己一杯咖啡',
       'phase.done': '今天下班了 · 收获已入账',
       'phase.rest': '今天休息 · 不用上班',
@@ -50,9 +58,12 @@ window.__ModuleLoader__.load({
       'status.setup': '先把卖身契填好。',
       'money.burst': '+¥{amount} 已到账',
       'earned.label': '今天已经赚到',
+      'earned.paused': '休息中 · 暂停计费',
+      'earned.pausedTag': '收入暂停',
+      'earned.pausedTagAt': '收入暂停 · {time} 恢复',
       'earned.hint': '每分钟 +¥{rate} · 积少成多',
       'count.working': '距离今天下班',
-      'count.lunch': '距离下午开工',
+      'count.lunch': '距离休息结束',
       'count.before': '距离今天上班',
       'count.done': '已下班 · 明天见',
       'count.rest': '今天不用打卡',
@@ -106,13 +117,18 @@ window.__ModuleLoader__.load({
       'settings.wage': '日薪',
       'settings.start': '上班时间',
       'settings.end': '下班时间',
-      'settings.lunchStart': '午休开始',
-      'settings.lunch': '午休时长',
+      'settings.breaks': '休息时间',
+      'settings.breakAdd': '添加一段',
+      'settings.breakRemove': '删除这段休息',
+      'settings.breakStart': '休息开始',
+      'settings.breakMinutes': '休息时长',
+      'settings.breakEmpty': '还没有休息段，点「添加一段」补上。',
+      'settings.breakHint': '按开始时间自动排序；超出上下班时间的休息段会被忽略。',
       'settings.minutes': '分钟',
       'settings.reset': '恢复默认',
       'settings.hint': '改完立刻生效，数据只保存在本机。',
       'settings.invalid': '下班时间要晚于上班时间。',
-      'foot': '数据只保存在本机：点右上角「设置」改日薪、工时和午休时间。',
+      'foot': '数据只保存在本机：点右上角「设置」改日薪、工时和休息时间。',
       'cheer.1': '每分钟 +¥{rate}，积少成多。',
       'cheer.2': '慢慢来，每一秒的努力都算数。',
       'cheer.3': '工资正在到账，请勿打扰。',
@@ -129,7 +145,7 @@ window.__ModuleLoader__.load({
       'panel.label': 'Workday',
       'page.title': 'Workday encourager',
       'phase.working': 'On the clock · Pay is ticking up',
-      'phase.lunch': 'Lunch break · Pay paused',
+      'phase.lunch': 'On a break · Pay paused',
       'phase.before': 'Not clocked in · Coffee first',
       'phase.done': 'Clocked out · Today is banked',
       'phase.rest': 'Day off · No clock today',
@@ -154,9 +170,12 @@ window.__ModuleLoader__.load({
       'status.setup': 'Fill in your contract first.',
       'money.burst': '+¥{amount} received',
       'earned.label': 'Earned so far today',
+      'earned.paused': 'On a break · pay paused',
+      'earned.pausedTag': 'Paused',
+      'earned.pausedTagAt': 'Paused · back at {time}',
       'earned.hint': '+¥{rate} every minute · small and steady',
       'count.working': 'Until quitting time',
-      'count.lunch': 'Until the afternoon starts',
+      'count.lunch': 'Until the break ends',
       'count.before': 'Until work starts',
       'count.done': 'Off the clock · see you tomorrow',
       'count.rest': 'No clock today',
@@ -210,13 +229,18 @@ window.__ModuleLoader__.load({
       'settings.wage': 'Daily wage',
       'settings.start': 'Start',
       'settings.end': 'End',
-      'settings.lunchStart': 'Lunch starts',
-      'settings.lunch': 'Lunch length',
+      'settings.breaks': 'Breaks',
+      'settings.breakAdd': 'Add a break',
+      'settings.breakRemove': 'Remove this break',
+      'settings.breakStart': 'Break starts',
+      'settings.breakMinutes': 'Break length',
+      'settings.breakEmpty': 'No breaks yet. Add one.',
+      'settings.breakHint': 'Sorted by start time. Breaks outside work hours are ignored.',
       'settings.minutes': 'min',
       'settings.reset': 'Reset to defaults',
       'settings.hint': 'Changes apply instantly and stay on this device.',
       'settings.invalid': 'Quitting time must be later than start time.',
-      'foot': 'Everything stays on this device. Use Settings to change wage, hours, and lunch.',
+      'foot': 'Everything stays on this device. Use Settings to change wage, hours, and breaks.',
       'cheer.1': 'That is +¥{rate} a minute. Small and steady.',
       'cheer.2': 'Take it slow — every second of effort counts.',
       'cheer.3': 'Pay is arriving. Please do not disturb.',
@@ -391,11 +415,26 @@ window.__ModuleLoader__.load({
   line-height: 18px;
   font-variant-numeric: tabular-nums;
 }
+.dsh-wc-rate[data-paused='true'] {
+  color: var(--dsw-alias-state-warn-primary);
+}
 .dsh-wc-earnedLabel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
   margin-top: 14px;
   color: var(--dsw-alias-label-secondary);
   font-size: 12px;
   line-height: 18px;
+}
+.dsh-wc-pauseTag {
+  padding: 0 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--dsw-alias-state-warn-primary) 14%, transparent);
+  color: var(--dsw-alias-state-warn-primary);
+  font-size: 10px;
+  line-height: 17px;
 }
 .dsh-wc-money {
   display: flex;
@@ -806,6 +845,77 @@ window.__ModuleLoader__.load({
   line-height: 18px;
   pointer-events: none;
 }
+.dsh-wc-breaks {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--dsw-alias-border-l1);
+}
+.dsh-wc-breaksHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+.dsh-wc-breaksHead .dsh-wc-breakAdd {
+  height: 24px;
+  padding: 0 10px;
+  font-size: 11px;
+}
+.dsh-wc-breakAdd:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.dsh-wc-breakRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+.dsh-wc-breakTime {
+  flex: none;
+  width: 112px;
+}
+.dsh-wc-breakMinutes {
+  flex: none;
+  width: 64px;
+}
+.dsh-wc-breakUnit {
+  color: var(--dsw-alias-label-secondary);
+  font-size: 11px;
+  line-height: 17px;
+}
+.dsh-wc-breakRemove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin-left: auto;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--dsw-alias-label-secondary);
+  font: inherit;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+.dsh-wc-breakRemove:hover {
+  color: var(--dsw-alias-state-error-primary);
+  background: color-mix(in srgb, var(--dsw-alias-state-error-primary) 10%, transparent);
+}
+.dsh-wc-breakEmpty,
+.dsh-wc-breakHint {
+  margin: 8px 0 0;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 11px;
+  line-height: 17px;
+}
+.dsh-wc-breakEmpty {
+  color: var(--dsw-alias-label-primary);
+}
 .dsh-wc-settingsFoot {
   display: flex;
   flex-wrap: wrap;
@@ -839,6 +949,7 @@ window.__ModuleLoader__.load({
 .dsh-wc-link:focus-visible,
 .dsh-wc-action:focus-visible,
 .dsh-wc-shuffle:focus-visible,
+.dsh-wc-breakRemove:focus-visible,
 .dsh-wc-disclosure:focus-visible {
   outline: 2px solid var(--dsw-alias-brand-primary);
   outline-offset: 2px;
@@ -1035,24 +1146,69 @@ window.__ModuleLoader__.load({
       return `${pad2(minutes)}:${pad2(seconds)}`;
     }
 
+    /** A stable identity for one break row, so React keys survive a re-sort. */
+    let breakIdCounter = 0;
+    function newBreakId() {
+      breakIdCounter += 1;
+      return `break-${breakIdCounter}-${Date.now().toString(36)}`;
+    }
+
+    /** One stored break row clamped into a usable shape, or null when unreadable. */
+    function normalizeBreak(raw) {
+      if (raw === null || typeof raw !== 'object') return null;
+      const start = parseTime(raw.start, -1);
+      if (start < 0) return null;
+      const minutes = Number(raw.minutes);
+      return {
+        id: typeof raw.id === 'string' && raw.id !== '' ? raw.id : newBreakId(),
+        start: timeText(start),
+        minutes: Number.isFinite(minutes) ? clamp(Math.round(minutes), 0, 600) : 30,
+      };
+    }
+
+    /** Break rows sorted by start time, duplicate ids replaced, capped in count. */
+    function normalizeBreaks(raw) {
+      const seen = new Set();
+      const rows = [];
+      for (const item of Array.isArray(raw) ? raw : []) {
+        const row = normalizeBreak(item);
+        if (row === null) continue;
+        if (seen.has(row.id)) row.id = newBreakId();
+        seen.add(row.id);
+        rows.push(row);
+      }
+      rows.sort((left, right) => parseTime(left.start, 0) - parseTime(right.start, 0));
+      return rows.slice(0, MAX_BREAKS);
+    }
+
     /** A stored setting record reduced to values this page can compute with. */
     function normalizeSettings(raw) {
       const base = { ...DEFAULTS };
-      if (raw === null || typeof raw !== 'object') return base;
-      const wage = Number(raw.dailyWage);
-      const lunch = Number(raw.lunchMinutes);
+      const source = raw !== null && typeof raw === 'object' ? raw : null;
+      const wage = source === null ? NaN : Number(source.dailyWage);
+      let breaks;
+      if (source !== null && Array.isArray(source.breaks)) {
+        breaks = normalizeBreaks(source.breaks);
+      } else if (source !== null && (source.lunchStart !== undefined || source.lunchMinutes !== undefined)) {
+        /* One-time migration of the old single lunch fields. */
+        breaks = normalizeBreaks([{
+          start: source.lunchStart ?? base.breaks[0].start,
+          minutes: source.lunchMinutes ?? base.breaks[0].minutes,
+        }]);
+      } else {
+        breaks = normalizeBreaks(base.breaks);
+      }
       return {
         dailyWage: Number.isFinite(wage) ? clamp(wage, 0, 1000000) : base.dailyWage,
-        start: timeText(parseTime(raw.start, parseTime(base.start, 540))),
-        end: timeText(parseTime(raw.end, parseTime(base.end, 1080))),
-        lunchStart: timeText(parseTime(raw.lunchStart, parseTime(base.lunchStart, 720))),
-        lunchMinutes: Number.isFinite(lunch) ? clamp(Math.round(lunch), 0, 600) : base.lunchMinutes,
+        start: timeText(parseTime(source === null ? base.start : source.start, parseTime(base.start, 540))),
+        end: timeText(parseTime(source === null ? base.end : source.end, parseTime(base.end, 1080))),
+        breaks,
       };
     }
 
     /** Read the saved settings and today's rest-day override, or start fresh. */
     function readState() {
-      const fallback = { settings: { ...DEFAULTS }, restOverride: null, shopRound: 0 };
+      const fallback = { settings: normalizeSettings(null), restOverride: null, shopRound: 0 };
       try {
         const raw = window.localStorage.getItem(STORAGE_KEY);
         if (raw === null) return fallback;
@@ -1069,24 +1225,46 @@ window.__ModuleLoader__.load({
     }
 
     /**
-     * The paid part of the day: the morning and afternoon windows between start
-     * and end, with the lunch gap removed. An unreadable schedule is invalid
+     * The paid part of the day: the work span with every configured break cut
+     * out. Overlapping breaks merge, so a break can never be counted twice; a
+     * break outside the work span is ignored. An unreadable schedule is invalid
      * rather than silently guessed, so the settings hint can ask for a fix.
      */
     function scheduleOf(settings) {
       const start = parseTime(settings.start, 540);
       const end = parseTime(settings.end, 1080);
-      const lunchStart = parseTime(settings.lunchStart, 720);
       const valid = end > start;
-      const lunchLength = valid ? Math.min(Math.max(0, settings.lunchMinutes), end - start) : 0;
-      const lunchFrom = valid ? clamp(lunchStart, start, end) : start;
-      const lunchTo = valid ? Math.min(end, lunchFrom + lunchLength) : start;
-      const windows = valid
-        ? [
-          [start * 60, lunchFrom * 60],
-          [lunchTo * 60, end * 60],
-        ].filter((window) => window[1] - window[0] > 0)
-        : [];
+      const windows = [];
+      let hasGap = false;
+      if (valid) {
+        const gaps = [];
+        const breaks = Array.isArray(settings.breaks) ? settings.breaks : [];
+        for (const item of breaks) {
+          const from = parseTime(item.start, -1);
+          if (from < start || from >= end) continue;
+          const minutes = clamp(Number(item.minutes) || 0, 0, end - from);
+          const to = from + minutes;
+          if (to <= from) continue;
+          gaps.push([from, to]);
+        }
+        gaps.sort((left, right) => left[0] - right[0]);
+        const merged = [];
+        for (const gap of gaps) {
+          const last = merged[merged.length - 1];
+          if (last !== undefined && gap[0] <= last[1]) {
+            last[1] = Math.max(last[1], gap[1]);
+          } else {
+            merged.push([gap[0], gap[1]]);
+          }
+        }
+        hasGap = merged.length > 0;
+        let cursor = start;
+        for (const gap of merged) {
+          if (gap[0] > cursor) windows.push([cursor * 60, gap[0] * 60]);
+          cursor = Math.max(cursor, gap[1]);
+        }
+        if (cursor < end) windows.push([cursor * 60, end * 60]);
+      }
       const workSeconds = windows.reduce((sum, window) => sum + (window[1] - window[0]), 0);
       return {
         valid,
@@ -1094,8 +1272,7 @@ window.__ModuleLoader__.load({
         endSeconds: end * 60,
         windows,
         workSeconds,
-        /* A zero-length lunch leaves two windows that touch, not a real gap. */
-        hasGap: valid && lunchTo > lunchFrom,
+        hasGap,
       };
     }
 
@@ -1121,7 +1298,7 @@ window.__ModuleLoader__.load({
       return schedule.hasGap ? 'lunch' : 'working';
     }
 
-    /** Seconds until the next paid boundary, or null when nothing is counting. */
+    /** Seconds until the next paid boundary, or the shift end while on a break. */
     function countdownSecondsOf(now, schedule) {
       const seconds = secondsOfDay(now);
       if (seconds < schedule.startSeconds) return schedule.startSeconds - seconds;
@@ -1131,7 +1308,7 @@ window.__ModuleLoader__.load({
       for (const window of schedule.windows) {
         if (window[0] > seconds) return window[0] - seconds;
       }
-      return null;
+      return schedule.endSeconds > seconds ? schedule.endSeconds - seconds : null;
     }
 
     /**
@@ -1350,7 +1527,7 @@ window.__ModuleLoader__.load({
           emit();
         },
         resetSettings() {
-          state = { ...state, settings: { ...DEFAULTS } };
+          state = { ...state, settings: normalizeSettings(null) };
           save();
           emit();
         },
@@ -1364,7 +1541,7 @@ window.__ModuleLoader__.load({
     let store = null;
 
     /** What both surfaces read before the store exists (never for long). */
-    const EMPTY_STATE = { settings: { ...DEFAULTS }, restOverride: null, shopRound: 0 };
+    const EMPTY_STATE = { settings: normalizeSettings(null), restOverride: null, shopRound: 0 };
 
     /** Subscribe one component to the shared schedule state. */
     function useStoreState() {
@@ -1484,9 +1661,85 @@ window.__ModuleLoader__.load({
       );
     }
 
-    /** The settings card: wage, hours, and lunch, all persisted as they change. */
+    /** Where a newly added break starts: the middle of the widest free stretch. */
+    function nextBreakStartOf(settings) {
+      const start = parseTime(settings.start, 540);
+      const end = parseTime(settings.end, 1080);
+      const rows = (Array.isArray(settings.breaks) ? settings.breaks : [])
+        .map((item) => parseTime(item.start, start))
+        .filter((minute) => minute >= start && minute < end)
+        .sort((left, right) => left - right);
+      const edges = [start, ...rows, end];
+      let bestFrom = start;
+      let bestGap = -1;
+      for (let index = 0; index < edges.length - 1; index += 1) {
+        const gap = edges[index + 1] - edges[index];
+        if (gap > bestGap) {
+          bestGap = gap;
+          bestFrom = edges[index];
+        }
+      }
+      const midpoint = bestFrom + Math.floor(bestGap / 2 / 15) * 15;
+      return timeText(clamp(midpoint, start, Math.max(start, end - 30)));
+    }
+
+    /**
+     * Keep the editor's row order while a break field has focus. The store has
+     * already sorted the list, but swapping rows under the caret would move the
+     * field being edited; the sorted order takes over once focus leaves.
+     */
+    function orderBreaksForEdit(breaks, heldOrder) {
+      if (heldOrder === null) return breaks;
+      const byId = new Map(breaks.map((item) => [item.id, item]));
+      const rows = heldOrder.map((id) => byId.get(id)).filter(Boolean);
+      for (const item of breaks) {
+        if (!heldOrder.includes(item.id)) rows.push(item);
+      }
+      return rows;
+    }
+
+    /** Minute input for one break row; keeps an empty draft while typing. */
+    function BreakMinutes({ label, value, onChange }) {
+      const [text, setText] = React.useState(() => String(value));
+      React.useEffect(() => {
+        setText(String(value));
+      }, [value]);
+      const commit = (next) => {
+        const parsed = Number.parseFloat(next);
+        if (!Number.isFinite(parsed)) return;
+        onChange(clamp(Math.round(parsed), 0, 600));
+      };
+      return h('input', {
+        className: 'dsh-wc-input dsh-wc-breakMinutes',
+        type: 'number',
+        inputMode: 'numeric',
+        min: 0,
+        max: 600,
+        step: 15,
+        value: text,
+        'aria-label': label,
+        onChange: (event) => {
+          setText(event.target.value);
+          commit(event.target.value);
+        },
+        onBlur: () => setText(String(value)),
+        onKeyDown: (event) => {
+          if (event.key === 'Enter') event.currentTarget.blur();
+        },
+      });
+    }
+
+    /** The settings card: wage, hours, and any number of breaks, saved as typed. */
     function SettingsCard({ t, settings, schedule }) {
       const update = (patch) => store.update(patch);
+      const breaks = Array.isArray(settings.breaks) ? settings.breaks : [];
+      /* Frozen visual order while a break field is focused, so sorting never
+         moves the input under the caret. */
+      const [heldOrder, setHeldOrder] = React.useState(null);
+      const orderedBreaks = orderBreaksForEdit(breaks, heldOrder);
+      const changeBreak = (id, patch) => {
+        update({ breaks: breaks.map((item) => (item.id === id ? { ...item, ...patch } : item)) });
+      };
       return h(
         'div',
         { className: 'dsh-wc-settings' },
@@ -1517,20 +1770,76 @@ window.__ModuleLoader__.load({
             value: settings.end,
             onChange: (next) => update({ end: next }),
           }),
-          h(TimeField, {
-            label: t('settings.lunchStart'),
-            value: settings.lunchStart,
-            onChange: (next) => update({ lunchStart: next }),
-          }),
-          h(NumberField, {
-            label: t('settings.lunch'),
-            value: settings.lunchMinutes,
-            min: 0,
-            max: 600,
-            step: 15,
-            suffix: t('settings.minutes'),
-            onChange: (next) => update({ lunchMinutes: next }),
-          }),
+        ),
+        h(
+          'div',
+          {
+            className: 'dsh-wc-breaks',
+            onFocus: () => {
+              if (heldOrder === null) setHeldOrder(breaks.map((item) => item.id));
+            },
+            onBlur: (event) => {
+              if (event.currentTarget.contains(event.relatedTarget)) return;
+              setHeldOrder(null);
+            },
+          },
+          h(
+            'div',
+            { className: 'dsh-wc-breaksHead' },
+            h('span', { className: 'dsh-wc-fieldLabel' }, t('settings.breaks')),
+            h(
+              'button',
+              {
+                type: 'button',
+                className: 'dsh-wc-action dsh-wc-breakAdd',
+                disabled: breaks.length >= MAX_BREAKS,
+                onClick: () => {
+                  setHeldOrder(null);
+                  update({ breaks: [...breaks, { start: nextBreakStartOf(settings), minutes: 30 }] });
+                },
+              },
+              t('settings.breakAdd'),
+            ),
+          ),
+          orderedBreaks.map((item) =>
+            h(
+              'div',
+              { className: 'dsh-wc-breakRow', key: item.id },
+              h('input', {
+                className: 'dsh-wc-input dsh-wc-breakTime',
+                type: 'time',
+                value: item.start,
+                'aria-label': t('settings.breakStart'),
+                onChange: (event) => {
+                  if (event.target.value !== '') changeBreak(item.id, { start: event.target.value });
+                },
+              }),
+              h(BreakMinutes, {
+                label: t('settings.breakMinutes'),
+                value: item.minutes,
+                onChange: (next) => changeBreak(item.id, { minutes: next }),
+              }),
+              h('span', { className: 'dsh-wc-breakUnit' }, t('settings.minutes')),
+              h(
+                'button',
+                {
+                  type: 'button',
+                  className: 'dsh-wc-breakRemove',
+                  title: t('settings.breakRemove'),
+                  'aria-label': t('settings.breakRemove'),
+                  onClick: () => {
+                    setHeldOrder(null);
+                    update({ breaks: breaks.filter((row) => row.id !== item.id) });
+                  },
+                },
+                '×',
+              ),
+            ),
+          ),
+          breaks.length === 0
+            ? h('p', { className: 'dsh-wc-breakEmpty' }, t('settings.breakEmpty'))
+            : null,
+          h('p', { className: 'dsh-wc-breakHint' }, t('settings.breakHint')),
         ),
         h(
           'div',
@@ -1634,6 +1943,12 @@ window.__ModuleLoader__.load({
       const workedHours = (info.workedSeconds / 3600).toFixed(2);
       const fullHours = (info.workSeconds / 3600).toFixed(2);
       const minuteRate = moneyText(info.ratePerMinute, 4);
+      const resumeAt = info.phase === 'lunch' && info.countdownSeconds !== null
+        ? new Date(now.getTime() + info.countdownSeconds * 1000)
+        : null;
+      const resumeText = resumeAt === null
+        ? null
+        : `${pad2(resumeAt.getHours())}:${pad2(resumeAt.getMinutes())}`;
 
       return h(
         'section',
@@ -1687,11 +2002,29 @@ window.__ModuleLoader__.load({
                   ),
                   h(
                     'span',
-                    { className: 'dsh-wc-rate' },
-                    t('earned.hint', { rate: minuteRate }),
+                    {
+                      className: 'dsh-wc-rate',
+                      'data-paused': info.phase === 'lunch' ? 'true' : undefined,
+                    },
+                    info.phase === 'lunch'
+                      ? t('earned.paused')
+                      : t('earned.hint', { rate: minuteRate }),
                   ),
                 ),
-                h('div', { className: 'dsh-wc-earnedLabel' }, t('earned.label')),
+                h(
+                  'div',
+                  { className: 'dsh-wc-earnedLabel' },
+                  h('span', null, t('earned.label')),
+                  info.phase === 'lunch'
+                    ? h(
+                      'span',
+                      { className: 'dsh-wc-pauseTag' },
+                      resumeText === null
+                        ? t('earned.pausedTag')
+                        : t('earned.pausedTagAt', { time: resumeText }),
+                    )
+                    : null,
+                ),
                 burst === null
                   ? null
                   : h(
