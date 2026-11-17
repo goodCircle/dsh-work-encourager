@@ -28,6 +28,8 @@ dsh-work-encourager
 dsh plugin --profile <profile> add dsh-work-encourager
 ```
 
+把 `<profile>` 换成你的 profile 名（例如 `desktop`）。
+
 **方式二：Git 地址**
 
 ```
@@ -46,6 +48,28 @@ https://github.com/goodCircle/dsh-work-encourager
 ## 默认值
 
 日薪 ¥140、09:00–18:00、午休 12:00 起 60 分钟 + 17:30 起 30 分钟（合计 7.5 小时工作日）。进入面板右上角「设置」即可改成你自己的，休息段可以任意增删。
+
+## 开发与发版
+
+这个目录同时是 **DSH profile 链接的插件、npm 包源码和 git 仓库**，不要再另存副本。
+
+本地安装（给别的 profile 或新机器）：
+
+```sh
+dsh plugin --profile <profile> add /绝对路径/plugins/work-encourager
+```
+
+发版（先把代码 commit 掉）：
+
+```sh
+./release.sh patch    # 或 minor / major
+```
+
+脚本会升版本、提交、打 tag、推 main 和 tag；GitHub Actions 通过 OIDC 自动发布，本地不需要 npm token。
+
+首次发布、trusted publishing 配置和常见问题见 [RELEASING.md](./RELEASING.md)。
+
+要求：DSH >= `0.2.2-rc.1`；发布账号需开启安全钥匙 2FA。
 
 ## English
 
