@@ -1,6 +1,6 @@
 {
   "name": "dsh-work-encourager",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Left-sidebar workday encourager: today's pay ticks upward live, with a countdown to quitting time, workday progress, and your own daily wage, hours, and any number of breaks.",
   "type": "module",
   "keywords": [
